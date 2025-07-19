@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>বোটানি অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "জীবদেহে বিভিন্ন প্রকার লিপিডের ভূমিকা বিষয়ে কোনটি সঠিক?",
+          options: {
+            a: "কোলেস্টেরল কোষ আবরণীর তারল্যতা বৃদ্ধি করে",
+            b: "ফসফোলিপিড কোষের আয়নকে স্থির রাখে",
+            c: "মহিলাদের রক্তের LDL হৃদরোগের ঝুঁকি কমায়",
+            d: "লিপিড উদ্ভিদে বর্ণ সৃষ্টি করে",
+          },
+          correct: "d",
+          explanation:
+            "<p>ক্যারোটিনয়েড নামক লিপিডগুলি উদ্ভিদের ফুল ও ফলে বিভিন্ন বর্ণ (যেমন হলুদ, কমলা, লাল) সৃষ্টিতে প্রধান ভূমিকা পালন করে। এটি উদ্ভিদে আলোকসংশ্লেষণে সহায়ক রঙ্গক হিসেবেও কাজ করে।</p><ul><li><b>কোলেস্টেরল কোষ আবরণীর তারল্যতা বৃদ্ধি করে:</b> কোলেস্টেরল কোষ ঝিল্লির তারল্যতা বজায় রাখতে সাহায্য করে, তবে এটি তারল্যতা বাড়ায় না; বরং এটি তাপমাত্রা পরিবর্তনের সাথে ঝিল্লির তারল্য স্থিতিশীল রাখে (অর্থাৎ, উচ্চ তাপমাত্রায় অতিরিক্ত তারল্যতা কমায় এবং নিম্ন তাপমাত্রায় অতিরিক্ত শক্ত হওয়া প্রতিরোধ করে)। অতিরিক্ত কোলেস্টেরল ঝিল্লিকে কঠিন করে তুলতে পারে।</li><li><b>ফসফোলিপিড কোষের আয়নকে স্থির রাখে:</b> ফসফোলিপিড কোষ ঝিল্লির মূল উপাদান। তারা একটি দ্বিস্তর গঠন করে যা কোষের ভেতরের এবং বাইরের পরিবেশকে আলাদা করে। এটি আয়ন পরিবহনে পরোক্ষভাবে সহায়তা করে, তবে সরাসরি আয়নকে স্থির রাখে না। আয়ন পরিবহন মূলত আয়ন চ্যানেল এবং পাম্প দ্বারা নিয়ন্ত্রিত হয়।</li><li><b>মহিলাদের রক্তের LDL হৃদরোগের ঝুঁকি কমায়:</b> LDL (Low-Density Lipoprotein) কে 'খারাপ কোলেস্টেরল' বলা হয়, কারণ রক্তে এর উচ্চ মাত্রা ধমনীতে কোলেস্টেরল জমা করে অ্যাথেরোসক্লেরোসিস (ধমনী শক্ত হওয়া) সৃষ্টি করে, যা হৃদরোগের ঝুঁকি বাড়ায়, কমায় না।</li><li><b>লিপিড উদ্ভিদে বর্ণ সৃষ্টি করে:</b> এটি সঠিক। ক্যারোটিনয়েড (এক ধরনের লিপিড) উদ্ভিদের ফল, ফুল এবং পাতায় হলুদ, কমলা ও লাল রঙের জন্য দায়ী।</li></ul>",
+        },
+        {
+          id: 2,
+          question: "কোনটি জাতক লিপিড?",
+          options: {
+            a: "স্টেরয়েড",
+            b: "লিপোপ্রোটিন",
+            c: "ফসফোলিপিড",
+            d: "মোম",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>জাতক লিপিড (Derived Lipids)</b> হলো এমন লিপিড যা সরল বা যৌগিক লিপিডের হাইড্রোলাইসিস বা অন্যান্য রাসায়নিক পরিবর্তনের মাধ্যমে উৎপন্ন হয়। এদের একটি স্বতন্ত্র কাঠামো থাকে যা মৌলিক লিপিড থেকে ভিন্ন। <b>স্টেরয়েড</b> (যেমন কোলেস্টেরল, টেস্টোস্টেরন, ইস্ট্রোজেন) হলো জাতক লিপিডের প্রধান উদাহরণ। এদের একটি চার-রিং কাঠামো থাকে।</p><ul><li><b>লিপোপ্রোটিন:</b> এটি একটি <b>যৌগিক লিপিড</b> কারণ এটি লিপিড (যেমন ট্রাইগ্লিসারাইড, কোলেস্টেরল) এবং প্রোটিনের সমন্বয়ে গঠিত।</li><li><b>ফসফোলিপিড:</b> এটিও একটি <b>যৌগিক লিপিড</b> যা গ্লিসারল, ফ্যাটি অ্যাসিড এবং একটি ফসফেট গ্রুপ নিয়ে গঠিত।</li><li><b>মোম:</b> এটি একটি <b>সরল লিপিড</b> যা দীর্ঘ শিকল ফ্যাটি অ্যাসিড এবং দীর্ঘ শিকল অ্যালকোহলের এস্টার।</li></ul>",
+        },
+        {
+          id: 3,
+          question: "নিচের কোনটি রক্তে বেড়ে গেলে atherosclerosis হতে পারে?",
+          options: {
+            a: "LDL",
+            b: "VLDL",
+            c: "HDL",
+            d: "IDL",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>LDL (Low-Density Lipoprotein)</b> কে 'খারাপ কোলেস্টেরল' বলা হয়। রক্তে LDL এর পরিমাণ অতিরিক্ত বেড়ে গেলে এটি রক্তনালীর (ধমনীর) ভেতরের দেয়ালে জমা হতে শুরু করে এবং 'প্লাক' (plaque) গঠন করে। এই প্লাক ধমনীকে শক্ত ও সরু করে ফেলে, যা <b>অ্যাথেরোসক্লেরোসিস (atherosclerosis)</b> নামে পরিচিত। অ্যাথেরোসক্লেরোসিস হৃদরোগ, স্ট্রোক এবং অন্যান্য রক্তনালী সংক্রান্ত রোগের প্রধান কারণ।</p><ul><li><b>VLDL (Very Low-Density Lipoprotein)</b> এবং <b>IDL (Intermediate-Density Lipoprotein)</b> ও কিছু পরিমাণে অ্যাথেরোসক্লেরোসিসের ঝুঁকি বাড়াতে পারে, কারণ তারাও কোলেস্টেরল এবং ট্রাইগ্লিসারাইড পরিবহন করে।</li><li><b>HDL (High-Density Lipoprotein)</b> কে 'ভালো কোলেস্টেরল' বলা হয় কারণ এটি রক্ত থেকে অতিরিক্ত কোলেস্টেরল যকৃতে ফেরত পাঠাতে সাহায্য করে, যা ধমনী থেকে প্লাক অপসারণে সহায়ক এবং হৃদরোগের ঝুঁকি কমায়।</li></ul>",
+        },
+        {
+          id: 4,
+          question:
+            "গ্লিসারল, ফ্যাটি অ্যাসিড এবং ফসফেটের সমন্বয়ে গঠিত লিপিডকে বলা হয়-",
+          options: {
+            a: "ফসফোলিপিড",
+            b: "ট্রাইগ্লিসারাইড",
+            c: "গ্লাইকোলিপিড",
+            d: "টারপিনয়েড",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>ফসফোলিপিড</b> হলো যৌগিক লিপিডের একটি গুরুত্বপূর্ণ শ্রেণি। এদের গঠনে একটি <b>গ্লিসারল</b> অণুর সাথে দুটি <b>ফ্যাটি অ্যাসিড</b> এবং একটি <b>ফসফেট গ্রুপ</b> যুক্ত থাকে। ফসফেট গ্রুপটি প্রায়শই একটি অতিরিক্ত পোলার অণু (যেমন কোলিন, ইথানলামিন, সেরিন) দ্বারা পরিবর্তিত থাকে, যা ফসফোলিপিডকে অ্যাম্ফিপ্যাথিক (জলবিদ্বেষী এবং জলপ্রিয় উভয় অংশ বিদ্যমান) করে তোলে। এটি কোষ ঝিল্লির প্রধান উপাদান।</p><ul><li><b>ট্রাইগ্লিসারাইড:</b> এটি গ্লিসারল এবং তিনটি ফ্যাটি অ্যাসিডের সমন্বয়ে গঠিত।</li><li><b>গ্লাইকোলিপিড:</b> এতে লিপিডের সাথে কার্বোহাইড্রেট অংশ যুক্ত থাকে।</li><li><b>টারপিনয়েড:</b> এরা আইসোপ্রিনয়েড ইউনিটের পলিমার এবং এদের গঠনে গ্লিসারল, ফ্যাটি অ্যাসিড বা ফসফেট থাকে না।</li></ul>",
+        },
+        {
+          id: 5,
+          question: "নিচের কোনটি ফসফোলিপিড নয়?",
+          options: {
+            a: "কিউটিন",
+            b: "টারপিন",
+            c: "সুবেরিন",
+            d: "লেসিথিন",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>লেসিথিন</b> (ফসফ্যাটিডিলকোলিন) হলো একটি অত্যন্ত পরিচিত এবং গুরুত্বপূর্ণ <b>ফসফোলিপিড</b> যা ডিমের কুসুম, সয়াবিন এবং অন্যান্য খাদ্য উৎস থেকে পাওয়া যায়। এটি কোষ ঝিল্লির একটি উপাদান এবং ইমালসিফায়ার হিসেবে ব্যবহৃত হয়।</p><ul><li><b>কিউটিন:</b> এটি দীর্ঘ শিকল ফ্যাটি অ্যাসিডের একটি পলিমার যা উদ্ভিদের পাতা এবং কাণ্ডের বাইরের স্তরে জলরোধী আবরণ (কিউটিকল) তৈরি করে। এটি একটি লিপিড হলেও, এর গঠনে ফসফেট গ্রুপ থাকে না, তাই এটি ফসফোলিপিড নয়।</li><li><b>টারপিন:</b> এটি টারপিনয়েড শ্রেণির হাইড্রোকার্বন এবং অপরিহার্য তেলের উপাদান। এটি লিপিড হলেও ফসফোলিপিড নয়।</li><li><b>সুবেরিন:</b> এটি ফেনোলিক অ্যাসিড এবং দীর্ঘ শিকল ফ্যাটি অ্যাসিডের একটি জটিল পলিমার যা উদ্ভিদের কর্ক কোষের প্রাচীরে পাওয়া যায় এবং জলরোধী বৈশিষ্ট্য প্রদান করে। এটি লিপিড হলেও ফসফোলিপিড নয়।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "কোন Lipoprotein কে 'Bad cholesterol' বলে?",
+          options: {
+            a: "Chylomicron",
+            b: "Very low density lipoprotein",
+            c: "High density lipoprotein",
+            d: "Low density lipoprotein",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>LDL (Low-Density Lipoprotein)</b> কে সাধারণত 'Bad cholesterol' বা 'খারাপ কোলেস্টেরল' বলা হয়। এর কারণ হলো, যখন রক্তে LDL এর মাত্রা বেশি থাকে, তখন এটি কোলেস্টেরলকে ধমনীর দেয়ালে জমা করে অ্যাথেরোসক্লেরোসিস (ধমনী শক্ত ও সরু হয়ে যাওয়া) সৃষ্টি করতে পারে, যা হৃদরোগ এবং স্ট্রোকের ঝুঁকি বাড়ায়।</p><ul><li><b>HDL (High-Density Lipoprotein)</b> কে 'Good cholesterol' বা 'ভালো কোলেস্টেরল' বলা হয়, কারণ এটি ধমনী থেকে অতিরিক্ত কোলেস্টেরল যকৃতে ফেরত পাঠাতে সাহায্য করে।</li><li><b>Chylomicron</b> খাদ্য থেকে লিপিড (ট্রাইগ্লিসারাইড) পরিবহনে সাহায্য করে।</li><li><b>Very low density lipoprotein (VLDL)</b> যকৃৎ থেকে ট্রাইগ্লিসারাইড এবং কোলেস্টেরলকে টিস্যুতে পরিবহনে সাহায্য করে।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "নিচের কোন ভিটামিনটি পানিতে দ্রবণীয়?",
+          options: {
+            a: "ভিটামিন A",
+            b: "ভিটামিন B complex",
+            c: "ভিটামিন D",
+            d: "ভিটামিন K",
+          },
+          correct: "b",
+          explanation:
+            "<p>ভিটামিনগুলোকে তাদের দ্রবণীয়তার ভিত্তিতে দুটি প্রধান শ্রেণীতে ভাগ করা যায়: ফ্যাট-দ্রবণীয় এবং পানিতে দ্রবণীয়।</p><ul><li><b>পানিতে দ্রবণীয় ভিটামিন:</b> এই ভিটামিনগুলো পানিতে সহজে দ্রবীভূত হয় এবং শরীর এদেরকে দীর্ঘক্ষণ ধরে সঞ্চয় করে রাখে না। অতিরিক্ত পরিমাণে গ্রহণ করলে প্রস্রাবের মাধ্যমে শরীর থেকে বের হয়ে যায়। <b>ভিটামিন B কমপ্লেক্স</b> (যেমন B1, B2, B3, B5, B6, B7, B9, B12) এবং <b>ভিটামিন C</b> হলো পানিতে দ্রবণীয় ভিটামিন।</li><li><b>ফ্যাট-দ্রবণীয় ভিটামিন:</b> এই ভিটামিনগুলো ফ্যাটের মধ্যে দ্রবীভূত হয় এবং শরীর এদেরকে যকৃত ও চর্বি টিস্যুতে সঞ্চয় করে রাখতে পারে। <b>ভিটামিন A, D, E এবং K</b> হলো ফ্যাট-দ্রবণীয় ভিটামিন।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "নিচের কোনটি উদ্ভিদের সুবাস সৃষ্টি করে?",
+          options: {
+            a: "টারপিনয়েড",
+            b: "গ্লাইকোলিপিড",
+            c: "ট্রাইগ্লিসারাইড",
+            d: "স্টেরয়েড",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>টারপিনয়েড (Terpenoids)</b> হলো এক বিশাল শ্রেণির জৈব যৌগ যা প্রধানত উদ্ভিদে পাওয়া যায়। এগুলি আইসোপ্রিনয়েড ইউনিটের পলিমার এবং উদ্ভিদে বিভিন্ন সুগন্ধি, স্বাদযুক্ত যৌগ এবং রঞ্জক তৈরিতে ভূমিকা রাখে। উদ্ভিদের অপরিহার্য তেল (essential oils) এবং রেজিনের প্রধান উপাদান হলো টারপিনয়েড, যা তাদের বিশেষ সুগন্ধের জন্য দায়ী।</p><ul><li><b>গ্লাইকোলিপিড:</b> এদের গঠনে লিপিডের সাথে কার্বোহাইড্রেট যুক্ত থাকে এবং এরা সাধারণত কোষ ঝিল্লির উপাদান।</li><li><b>ট্রাইগ্লিসারাইড:</b> এটি হলো সঞ্চিত ফ্যাট এবং তেলের প্রধান উপাদান, যা শক্তির উৎস হিসেবে কাজ করে।</li><li><b>স্টেরয়েড:</b> এরা হরমোন ও কোলেস্টেরলের মতো যৌগ, যাদের প্রধানত গাঠনিক ও নিয়ন্ত্রক ভূমিকা থাকে।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "সুগন্ধি প্রসাধনী তৈরিতে কোনটি ব্যবহার করা হয়?",
+          options: {
+            a: "কাইটিন",
+            b: "স্টার্চ",
+            c: "টারপিনস",
+            d: "লেসিথিন",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>টারপিনস (Terpenes)</b>, যা টারপিনয়েডের একটি শ্রেণি, বিভিন্ন উদ্ভিজ্জ উৎস থেকে প্রাপ্ত সুগন্ধি যৌগ। এগুলি অপরিহার্য তেলের (essential oils) প্রধান উপাদান এবং তাদের মনোরম গন্ধের জন্য পরিচিত। তাই, <b>সুগন্ধি প্রসাধনী, পারফিউম, সাবান এবং ফ্লেভারিং এজেন্ট</b> হিসেবে টারপিনস বহুল ব্যবহৃত হয়।</p><ul><li><b>কাইটিন:</b> এটি একটি পলিস্যাকারাইড যা পোকামাকড় ও ছত্রাকের বহিঃকঙ্কালে পাওয়া যায় এবং এর সুগন্ধি প্রসাধনীতে কোনো ব্যবহার নেই।</li><li><b>স্টার্চ:</b> এটি উদ্ভিদের সঞ্চিত খাদ্য এবং কার্বোহাইড্রেট।</li><li><b>লেসিথিন:</b> এটি একটি ফসফোলিপিড যা ইমালসিফায়ার হিসেবে ব্যবহৃত হয়, তবে সুগন্ধি তৈরিতে এর সরাসরি ভূমিকা নেই।</li></ul>",
+        },
+        {
+          id: 10,
+          question: "মোম কোন ধরনের পদার্থ?",
+          options: {
+            a: "প্রোটিন",
+            b: "লিপিড",
+            c: "শর্করা",
+            d: "জৈব এসিড",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>মোম</b> হলো <b>সরল লিপিডের</b> একটি উদাহরণ। এটি দীর্ঘ শিকল ফ্যাটি অ্যাসিড এবং দীর্ঘ শিকল অ্যালকোহলের এস্টার দ্বারা গঠিত। মোমগুলো সাধারণত জলরোধী (hydrophobic) এবং প্রতিরক্ষামূলক আবরণ তৈরিতে ভূমিকা রাখে, যেমন উদ্ভিদের পাতায় মোমের আবরণ বা মৌমাছির মোম।</p><ul><li><b>প্রোটিন:</b> অ্যামিনো অ্যাসিডের পলিমার।</li><li><b>শর্করা (কার্বোহাইড্রেট):</b> মনোস্যাকারাইডের পলিমার।</li><li><b>জৈব এসিড:</b> কার্বক্সিল গ্রুপযুক্ত জৈব যৌগ।</li></ul>",
+        },
+        {
+          id: 11,
+          question: "কোলেস্টেরল কোন জাতীয় পদার্থ?",
+          options: {
+            a: "কার্বোহাইড্রেট",
+            b: "প্রোটিন",
+            c: "লিপিড",
+            d: "ভিটামিন",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>কোলেস্টেরল</b> হলো একটি <b>স্টেরয়েড</b>, যা <b>জাতক লিপিডের</b> অন্তর্ভুক্ত। এটি কোষ ঝিল্লির একটি গুরুত্বপূর্ণ উপাদান যা ঝিল্লির তারল্যতা নিয়ন্ত্রণ করে। এছাড়াও, কোলেস্টেরল বিভিন্ন স্টেরয়েড হরমোন (যেমন টেস্টোস্টেরন, ইস্ট্রোজেন, কর্টিসল) এবং ভিটামিন ডি সংশ্লেষণের জন্য একটি পূর্বসূরী (precursor) হিসেবে কাজ করে।</p><ul><li><b>কার্বোহাইড্রেট:</b> শর্করা জাতীয় পদার্থ।</li><li><b>প্রোটিন:</b> অ্যামিনো অ্যাসিডের পলিমার।</li><li><b>ভিটামিন:</b> বিভিন্ন ধরনের জৈব যৌগ যা দেহের কার্যকারিতার জন্য অল্প পরিমাণে প্রয়োজন। যদিও ভিটামিন D কোলেস্টেরল থেকে তৈরি হয়, কোলেস্টেরল নিজেই একটি ভিটামিন নয়।</li></ul>",
+        },
+        {
+          id: 12,
+          question: "নিচের কোনটি তৈল জাতীয় লিপিড নয়?",
+          options: {
+            a: "অলিক অ্যাসিড",
+            b: "পামিটোলিক অ্যাসিড",
+            c: "লিনোনিক অ্যাসিড",
+            d: "পামিটিক অ্যাসিড",
+          },
+          correct: "d",
+          explanation:
+            "<p>তৈল জাতীয় লিপিড বা তেল সাধারণত <b>অসম্পৃক্ত ফ্যাটি অ্যাসিড</b> সমৃদ্ধ হয়, যা সাধারণ তাপমাত্রায় (কক্ষ তাপমাত্রায়) তরল অবস্থায় থাকে।</p><ul><li><b>অলিক অ্যাসিড, পামিটোলিক অ্যাসিড এবং লিনোনিক অ্যাসিড:</b> এই তিনটিই <b>অসম্পৃক্ত ফ্যাটি অ্যাসিড</b>। এদের অণুতে কার্বন-কার্বন দ্বিবন্ধন থাকে, যা এদেরকে তরল অবস্থায় রাখতে সাহায্য করে। এরা তেলের (যেমন জলপাই তেল, সূর্যমুখী তেল) প্রধান উপাদান।</li><li><b>পামিটিক অ্যাসিড:</b> এটি একটি <b>সম্পৃক্ত ফ্যাটি অ্যাসিড</b>। এর অণুতে কোনো কার্বন-কার্বন দ্বিবন্ধন থাকে না, যার কারণে এটি সাধারণ তাপমাত্রায় কঠিন বা আধা-কঠিন অবস্থায় থাকে এবং চর্বির প্রধান উপাদান। তাই এটি তৈল জাতীয় লিপিড নয়।</li></ul>",
+        },
+        {
+          id: 13,
+          question: "নিচের কোনটি মুরগীর ডিম ও মাছে প্রচুর পরিমাণে থাকে?",
+          options: {
+            a: "লেসিথিন",
+            b: "পামিটিক অ্যাসিড",
+            c: "লিনোনিক অ্যাসিড",
+            d: "অলিক অ্যাসিড",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>লেসিথিন</b> (ফসফ্যাটিডিলকোলিন) হলো একটি গুরুত্বপূর্ণ <b>ফসফোলিপিড</b> যা কোষ ঝিল্লির একটি প্রধান উপাদান। এটি ডিমের কুসুম, সয়াবিন এবং মাছে প্রচুর পরিমাণে পাওয়া যায়। লেসিথিন একটি প্রাকৃতিক ইমালসিফায়ার হিসেবে কাজ করে, অর্থাৎ এটি তেল এবং পানিকে মিশে থাকতে সাহায্য করে।</p><ul><li>পামিটিক অ্যাসিড হলো একটি সম্পৃক্ত ফ্যাটি অ্যাসিড।</li><li>লিনোনিক অ্যাসিড এবং অলিক অ্যাসিড হলো অসম্পৃক্ত ফ্যাটি অ্যাসিড। এই ফ্যাটি অ্যাসিডগুলো ডিম ও মাছে ফ্যাটের অংশ হিসেবে বিদ্যমান থাকে, তবে লেসিথিনের মতো নির্দিষ্ট একটি লিপিড হিসেবে এদের পরিমাণ ততটা স্বতন্ত্রভাবে উল্লেখ করা হয় না।</li></ul>",
+        },
+        {
+          id: 14,
+          question: "কোনটি মানুষের করোনারি থ্রম্বোসিস সৃষ্টি করে?",
+          options: {
+            a: "HDL",
+            b: "LDL",
+            c: "VLDL",
+            d: "Chitin",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>LDL (Low-Density Lipoprotein)</b>, যাকে 'খারাপ কোলেস্টেরল' বলা হয়, রক্তে অতিরিক্ত পরিমাণে থাকলে এটি ধমনীর দেয়ালে জমা হয়ে <b>প্লাক (plaque)</b> গঠন করে। এই প্লাক ধমনীর ভেতরের পথকে সরু করে দেয় এবং রক্ত প্রবাহে বাধা সৃষ্টি করে (অ্যাথেরোসক্লেরোসিস)। যদি এই প্লাক ফেটে যায়, তাহলে এর উপর রক্ত জমাট বাঁধতে পারে, যাকে <b>থ্রম্বোসিস</b> বলে। এই থ্রম্বোসিস যখন হৃদপিণ্ডের রক্ত সরবরাহকারী করোনারি ধমনীতে ঘটে, তখন তাকে <b>করোনারি থ্রম্বোসিস</b> বলে, যা হার্ট অ্যাটাকের কারণ হতে পারে।</p><ul><li>HDL ('ভালো কোলেস্টেরল') কোলেস্টেরল অপসারণে সাহায্য করে।</li><li>VLDL ট্রাইগ্লিসারাইড পরিবহন করে, যা উচ্চমাত্রায় থাকলে ঝুঁকি বাড়াতে পারে তবে LDL এর মতো সরাসরি প্লাক গঠনে দায়ী নয়।</li><li>কাইটিন একটি পলিস্যাকারাইড এবং মানুষের শরীরে এটি পাওয়া যায় না।</li></ul>",
+        },
+        {
+          id: 15,
+          question: "লিপিড কত তাপমাত্রায় কঠিন থাকলে তাকে চর্বি বা ফ্যাট বলে?",
+          options: {
+            a: "20<sup>°</sup> সে",
+            b: "30<sup>°</sup> সে",
+            c: "80<sup>°</sup> সে",
+            d: "50<sup>°</sup> সে",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>চর্বি বা ফ্যাট (Fats)</b> হলো সেই লিপিড যা সাধারণ কক্ষ তাপমাত্রায় (প্রায় 20<sup>°</sup> সেলসিয়াস) কঠিন বা আধা-কঠিন অবস্থায় থাকে। এগুলি সাধারণত <b>সম্পৃক্ত ফ্যাটি অ্যাসিড</b> সমৃদ্ধ হয়, যা তাদের উচ্চ গলনাঙ্ক প্রদান করে। অন্যদিকে, যে লিপিড কক্ষ তাপমাত্রায় তরল থাকে, তাকে <b>তেল (Oils)</b> বলে এবং এটি অসম্পৃক্ত ফ্যাটি অ্যাসিড সমৃদ্ধ হয়, যার ফলে তাদের গলনাঙ্ক কম হয়।</p>",
+        },
+        {
+          id: 16,
+          question: "লিপিড অদ্রবণীয় কোনটিতে?",
+          options: {
+            a: "ইথার",
+            b: "অ্যালকোহল",
+            c: "বেনজিন",
+            d: "পানি",
+          },
+          correct: "d",
+          explanation:
+            "<p>লিপিড হলো একটি <b>হাইড্রোফোবিক (জলবিদ্বেষী)</b> পদার্থের শ্রেণী, যার অর্থ এরা পানিতে দ্রবীভূত হয় না বা খুব কম দ্রবীভূত হয়। 'Like dissolves like' নীতি অনুসারে, লিপিডগুলি সাধারণত নন-পোলার জৈব দ্রাবকগুলিতে (organic solvents) দ্রবণীয় হয়।</p><ul><li><b>পানি:</b> লিপিড <b>পানিতে অদ্রবণীয়</b>।</li><li><b>ইথার, অ্যালকোহল (কিছু পরিমাণে), বেনজিন এবং ক্লোরোফর্ম:</b> এইগুলি সবই নন-পোলার বা কম পোলার জৈব দ্রাবক, যেখানে লিপিড সহজেই দ্রবীভূত হয়।</li></ul>",
+        },
+        {
+          id: 17,
+          question: "সরল লিপিডের উদাহরণ নয় কোনটি?",
+          options: {
+            a: "মোম",
+            b: "তেল",
+            c: "রাবার",
+            d: "চর্বি",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>সরল লিপিড</b> হলো সেই লিপিড যা শুধুমাত্র ফ্যাটি অ্যাসিড এবং অ্যালকোহলের (সাধারণত গ্লিসারল) এস্টার দ্বারা গঠিত হয়।</p><ul><li><b>মোম:</b> এটি দীর্ঘ শিকল অ্যালকোহল এবং দীর্ঘ শিকল ফ্যাটি অ্যাসিডের এস্টার, তাই এটি সরল লিপিড।</li><li><b>তেল:</b> এটি গ্লিসারল এবং অসম্পৃক্ত ফ্যাটি অ্যাসিডের ট্রাইগ্লিসারাইড, তাই এটি সরল লিপিড।</li><li><b>চর্বি:</b> এটি গ্লিসারল এবং সম্পৃক্ত ফ্যাটি অ্যাসিডের ট্রাইগ্লিসারাইড, তাই এটি সরল লিপিড।</li><li><b>রাবার:</b> রাবার হলো আইসোপ্রিন ইউনিটের (একটি পাঁচ কার্বনের হাইড্রোকার্বন) একটি পলিমার। এটি লিপিড শ্রেণির অন্তর্ভুক্ত নয়, এটি একটি পলিমারাইজড হাইড্রোকার্বন।</li></ul>",
+        },
+        {
+          id: 18,
+          question: "লেসিথিন, সেফালিন, প্লাজমালোজেন কোন ধরনের লিপিড?",
+          options: {
+            a: "নিউট্রাল লিপিড",
+            b: "ফসফোলিপিড",
+            c: "গ্লাইকোলিপিড",
+            d: "টারপিনয়েড",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>লেসিথিন (Lecithin), সেফালিন (Cephalin), এবং প্লাজমালোজেন (Plasmalogen)</b> হলো <b>ফসফোলিপিড (Phospholipids)</b> এর প্রধান উদাহরণ। এই লিপিডগুলোর গঠনে একটি গ্লিসারল ব্যাকবোন, দুটি ফ্যাটি অ্যাসিডের লেজ এবং একটি ফসফেট গ্রুপ থাকে। ফসফেট গ্রুপটির সাথে প্রায়শই অতিরিক্ত পোলার হেড গ্রুপ (যেমন কোলিন, ইথানলামিন বা সেরিন) যুক্ত থাকে। এরা কোষ ঝিল্লির মূল উপাদান।</p><ul><li><b>নিউট্রাল লিপিড:</b> এটি মূলত ট্রাইগ্লিসারাইডকে বোঝায়, যেখানে কোনো চার্জযুক্ত গ্রুপ থাকে না।</li><li><b>গ্লাইকোলিপিড:</b> এতে লিপিডের সাথে কার্বোহাইড্রেট অংশ যুক্ত থাকে, ফসফেট নয়।</li><li><b>টারপিনয়েড:</b> এরা আইসোপ্রিনয়েড ইউনিটের পলিমার এবং এদের গঠনে গ্লিসারল, ফ্যাটি অ্যাসিড বা ফসফেট থাকে না।</li></ul>",
+        },
+        {
+          id: 19,
+          question: "রক্তে কোনটির পরিমাণ বেশি থাকা ভালো?",
+          options: {
+            a: "LDL",
+            b: "HDL",
+            c: "LDH",
+            d: "কোলেস্টেরল",
+          },
+          correct: "b",
+          explanation:
+            "<p>রক্তে <b>HDL (High-Density Lipoprotein)</b> এর পরিমাণ বেশি থাকা স্বাস্থ্যের জন্য ভালো। HDL কে 'ভালো কোলেস্টেরল' বলা হয় কারণ এটি রক্ত থেকে অতিরিক্ত কোলেস্টেরল (যা ধমনীর দেয়ালে জমা হতে পারে) যকৃতে ফেরত পাঠাতে সাহায্য করে, যেখানে এটি শরীর থেকে অপসারিত হয়। এর ফলে ধমনীতে প্লাক জমার ঝুঁকি কমে এবং হৃদরোগ প্রতিরোধে সাহায্য করে।</p><ul><li><b>LDL (Low-Density Lipoprotein)</b> কে 'খারাপ কোলেস্টেরল' বলা হয় এবং রক্তে এর উচ্চ মাত্রা অ্যাথেরোসক্লেরোসিস ও হৃদরোগের ঝুঁকি বাড়ায়।</li><li><b>LDH (Lactate Dehydrogenase)</b> একটি এনজাইম যা কোষের ক্ষতি বা রোগের কারণে রক্তে বৃদ্ধি পেতে পারে, এটি কোলেস্টেরল বা হৃদরোগের ঝুঁকির সাথে সরাসরি সম্পর্কিত নয়।</li><li><b>কোলেস্টেরল</b> একটি নির্দিষ্ট মাত্রায় রক্তে থাকা জরুরি, তবে এর সামগ্রিক মাত্রা এবং LDL ও HDL এর অনুপাত গুরুত্বপূর্ণ।</li></ul>",
+        },
+        {
+          id: 20,
+          question: "তুলসি, পুদিনা ও পাইন উদ্ভিদ থেকে কোন লিপিড পাওয়া যায়?",
+          options: {
+            a: "টারপিনস",
+            b: "কোলেস্টেরল",
+            c: "ফসফোলিপিড",
+            d: "গ্লিসারয়েড",
+          },
+          correct: "a",
+          explanation:
+            "<p>তুলসি, পুদিনা এবং পাইন গাছের মতো অনেক উদ্ভিদ তাদের বিশেষ সুগন্ধের জন্য পরিচিত। এই সুগন্ধগুলি মূলত <b>টারপিনস (Terpenes)</b> নামক জৈব যৌগগুলির কারণে হয়। টারপিনস হলো টারপিনয়েড শ্রেণির লিপিড যা অপরিহার্য তেলের (essential oils) প্রধান উপাদান। এগুলি উদ্ভিদের প্রতিরক্ষা, পরাগবাহক আকর্ষণ এবং অন্যান্য জৈব প্রক্রিয়ায় ভূমিকা পালন করে।</p><ul><li>কোলেস্টেরল প্রধানত প্রাণিজ লিপিড।</li><li>ফসফোলিপিড কোষ ঝিল্লির উপাদান।</li><li>গ্লিসারয়েড হলো ফ্যাট ও তেলের সাধারণ নাম (যেমন ট্রাইগ্লিসারাইড)।</li></ul>",
+        },
+        {
+          id: 21,
+          question: "মানুষের রক্তে কোলেস্টেরলের স্বাভাবিক মাত্রা হলো-",
+          options: {
+            a: "0.0-0.30%",
+            b: "০.৫-১.৫%",
+            c: "<span>0.15-0.20%</span>",
+            d: "১.০-২.৫%",
+          },
+          correct: "c",
+          explanation:
+            "<p>মানুষের রক্তে কোলেস্টেরলের স্বাভাবিক মাত্রা সাধারণত <span>0.15-0.20%</span> (150-200 mg/dL) এর মধ্যে থাকে। সাধারণত, রক্তে মোট কোলেস্টেরলের মাত্রা 200 mg/dL এর নিচে রাখা ভালো বলে বিবেচিত হয়। তবে, এই মাত্রা বয়স, লিঙ্গ, ব্যক্তিগত স্বাস্থ্য পরিস্থিতি এবং অন্যান্য ঝুঁকির কারণের উপর নির্ভর করে পরিবর্তিত হতে পারে এবং একজন স্বাস্থ্য পেশাদার দ্বারা মূল্যায়ন করা উচিত।</p>",
+        },
+        {
+          id: 22,
+          question: "ক্যারটিনয়েড হলো-",
+          options: {
+            a: "মিনারেল",
+            b: "প্রোটিন",
+            c: "স্টার্চ",
+            d: "লিপিড",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>ক্যারোটিনয়েড (Carotenoids)</b> হলো এক ধরণের <b>লিপিড</b> যা টেট্রাটারপিনয়েড শ্রেণির অন্তর্ভুক্ত। এগুলি উদ্ভিদে এবং কিছু অণুজীবতে রঙ্গক হিসেবে কাজ করে, যা ফল, ফুল এবং সবজিতে হলুদ, কমলা, লাল এবং কিছু ক্ষেত্রে সবুজ রঙ সৃষ্টি করে। বিটা-ক্যারোটিন (গাজরে পাওয়া যায়) এবং লুটেইন (সবুজ শাক-সবজিতে পাওয়া যায়) হলো ক্যারোটিনয়েডের পরিচিত উদাহরণ। এগুলি শক্তিশালী অ্যান্টিঅক্সিডেন্ট হিসেবেও কাজ করে।</p><ul><li>মিনারেল হলো অজৈব পদার্থ।</li><li>প্রোটিন অ্যামিনো অ্যাসিডের পলিমার।</li><li>স্টার্চ কার্বোহাইড্রেট এবং উদ্ভিদের সঞ্চিত খাদ্য।</li></ul>",
+        },
+        {
+          id: 23,
+          question: "LDL কোন জাতীয় জৈব রাসায়নিক উপাদান?",
+          options: {
+            a: "টারপিনস",
+            b: "স্টেরয়েড",
+            c: "চর্বি",
+            d: "তেল",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>LDL (Low-Density Lipoprotein)</b> হলো একটি লিপোপ্রোটিন কণা, যার অর্থ এটি লিপিড এবং প্রোটিনের সমন্বয়ে গঠিত। LDL এর লিপিড অংশে প্রধানত <b>কোলেস্টেরল</b> এবং কোলেস্টেরল এস্টার থাকে। <b>কোলেস্টেরল</b> হলো একটি <b>স্টেরয়েড</b>, যা জাতক লিপিডের অন্তর্ভুক্ত। তাই, LDL এর মূল লিপিড উপাদানটি স্টেরয়েড জাতীয়।</p><ul><li>টারপিনস হলো হাইড্রোকার্বন।</li><li>চর্বি ও তেল হলো ট্রাইগ্লিসারাইড (সরল লিপিড)।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                        <label class="option" data-option="${option}">
+                          <div class="circle">${option}</div>
+                          <span class="option-text">${question.options[option]}</span>
+                        </label>
+                      `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                           <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                           <div class="explanation-content">
+                             <div class="explanation-label">ব্যাখ্যা:</div>
+                             ${question.explanation}
+                           </div>
+                         </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                      <p class="question-label">${index + 1}. ${
+            question.question
+          }</p>
+                      <div class="options">
+                        ${optionsHTML}
+                      </div>
+                      ${explanationHTML}
+                    `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
